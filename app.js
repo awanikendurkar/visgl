@@ -5,19 +5,14 @@ import { StaticMap } from "react-map-gl";
 import { AmbientLight, PointLight, LightingEffect } from "@deck.gl/core";
 import DeckGL from "@deck.gl/react";
 import { PolygonLayer } from "@deck.gl/layers";
+import { PathLayer } from "@deck.gl/layers";
 import { TripsLayer } from "@deck.gl/geo-layers";
 import axios from "axios";
-
-// make API call
-const getQuery = () => {
-  axios
-    .get("http://localhost:8080", {
-      params: {
-        id: 12345,
-      },
-    })
-    .then((res) => console.log(res));
-};
+import { Drawer } from "@material-ui/core";
+import { List } from "@material-ui/core";
+import { ListItem } from "@material-ui/core";
+import Input from "@material-ui/core/Input";
+import Typography from "@material-ui/core";
 
 // Source data CSV
 const DATA_URL = {
@@ -56,37 +51,109 @@ const DEFAULT_THEME = {
 };
 
 const INITIAL_VIEW_STATE = {
-  longitude: -74,
-  latitude: 40.72,
-  zoom: 13,
-  pitch: 45,
+  longitude: -111.92518396810091,
+  latitude: 33.414291502635706,
+  zoom: 15,
+  pitch: 0,
   bearing: 0,
 };
 
 const MAP_STYLE =
   "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
-const landCover = [
-  [
-    [-74.0, 40.7],
-    [-74.02, 40.7],
-    [-74.02, 40.72],
-    [-74.0, 40.72],
-  ],
-];
+// const landCover = [
+//   [
+//     [-111, 33],
+//     [-112, 33],
+//     [-111, 34],
+//     [-112, 34],
+//   ],
+// ];
 
 export default function App({
   buildings = DATA_URL.BUILDINGS,
   trips = DATA_URL.TRIPS,
-  trailLength = 180,
+  trailLength = 1800,
   initialViewState = INITIAL_VIEW_STATE,
   mapStyle = MAP_STYLE,
   theme = DEFAULT_THEME,
-  loopLength = 1800, // unit corresponds to the timestamp in source data
+  loopLength = 10000, // unit corresponds to the timestamp in source data
   animationSpeed = 1,
 }) {
-  const [time, setTime] = useState(0);
+  const [time, setTime] = useState(1664500000);
   const [animation] = useState({});
+  const [apiData, setApiData] = useState({});
+
+  // make API call
+  const getQuery = () => {
+    axios
+      .get("http://localhost:9000", {
+        params: {
+          queryType: document.getElementById("query-type").value,
+          params: document.getElementById("params").value,
+          filepath:
+            "/home/awani/Desktop/SpatialProj/quickstart/data/simulated_trajectories.json",
+        },
+        crossdomain: true,
+      })
+      .then((res) => console.log(res.data));
+  };
+
+  const temp = [
+    {
+      trajectory_id: 73,
+      vehicle_id: 73,
+      timestamp: [1664515076, 1664515106],
+      location: [
+        [-111.92518390436581, 33.414237578989216],
+        [-111.92518384063071, 33.414183655342725],
+      ],
+    },
+    {
+      trajectory_id: 63,
+      vehicle_id: 63,
+      timestamp: [1664514836, 1664514851, 1664514866, 1664514881, 1664514896],
+      location: [
+        [-111.92282161935306, 33.41427909937204],
+        [-111.92285157742808, 33.414252073168285],
+        [-111.92282153563072, 33.41422517574458],
+        [-111.92282149374189, 33.41419819611907],
+        [-111.92285145187222, 33.414171205538906],
+      ],
+    },
+    {
+      trajectory_id: 0,
+      vehicle_id: 0,
+      timestamp: [
+        1664511371, 1664511386, 1664511401, 1664511416, 1664511431, 1664511446,
+        1664512181, 1664512196, 1664512211, 1664512226, 1664512241, 1664515751,
+        1664515766, 1664515781, 1664515796, 1664515811, 1664516546, 1664516561,
+        1664516591, 1664516606,
+      ],
+      location: [
+        [-111.92518396810091, 33.414291502635706],
+        [-111.9251839362123, 33.414264523000654],
+        [-111.92518390436581, 33.414237578989216],
+        [-111.9251838724772, 33.41421059935417],
+        [-111.92518384063071, 33.414183655342725],
+        [-111.9251838087421, 33.41415667570768],
+        [-111.92518394751099, 33.41427408234834],
+        [-111.92518391562238, 33.4142471027133],
+        [-111.92518388377589, 33.41422015870185],
+        [-111.92518385188728, 33.41419317906681],
+        [-111.92518382004077, 33.41416623505537],
+        [-111.9251839362123, 33.414264523000654],
+        [-111.92518390436581, 33.414237578989216],
+        [-111.9251838724772, 33.41421059935417],
+        [-111.92518384063071, 33.414183655342725],
+        [-111.9251838087421, 33.41415667570768],
+        [-111.92518394751099, 33.41427408234834],
+        [-111.92518391562238, 33.4142471027133],
+        [-111.92518385188728, 33.41419317906681],
+        [-111.92518382004077, 33.41416623505537],
+      ],
+    },
+  ];
 
   const animate = () => {
     setTime((t) => (t + animationSpeed) % loopLength);
@@ -99,38 +166,19 @@ export default function App({
   }, [animation]);
 
   const layers = [
-    // This is only needed when using shadow effects
-    new PolygonLayer({
-      id: "ground",
-      data: landCover,
-      getPolygon: (f) => f,
-      stroked: false,
-      getFillColor: [0, 0, 0, 0],
-    }),
     new TripsLayer({
       id: "trips",
-      data: trips,
-      getPath: (d) => d.path,
-      getTimestamps: (d) => d.timestamps,
-      getColor: (d) => (d.vendor === 0 ? theme.trailColor0 : theme.trailColor1),
-      opacity: 0.3,
-      widthMinPixels: 2,
+      data: temp,
+      getPath: (d) => d.location,
+      // deduct start timestamp from each data point to avoid overflow
+      getTimestamps: (d) => d.timestamp,
+      getColor: [0, 255, 0, 255],
+      opacity: 0.8,
+      widthMinPixels: 50,
       rounded: true,
-      trailLength,
+      fadeTrail: false,
+      trailLength: 200,
       currentTime: time,
-
-      shadowEnabled: false,
-    }),
-    new PolygonLayer({
-      id: "buildings",
-      data: buildings,
-      extruded: true,
-      wireframe: false,
-      opacity: 0.5,
-      getPolygon: (f) => f.polygon,
-      getElevation: (f) => f.height,
-      getFillColor: theme.buildingColor,
-      material: theme.material,
     }),
   ];
 
@@ -142,14 +190,36 @@ export default function App({
           effects={theme.effects}
           initialViewState={initialViewState}
           controller={true}
-          width='75%'
         >
           <StaticMap reuseMaps mapStyle={mapStyle} preventStyleDiffing={true} />
         </DeckGL>
       </div>
 
-      <div className='column'>
-        <button onClick={getQuery}>Submit</button>
+      <div className='column panel' style={{ float: "right", flex: 30 }}>
+        <Drawer anchor='right' variant='permanent' open={true}>
+          <List>
+            <ListItem>
+              <input type='file' id='dataset' name='data' />
+            </ListItem>
+            <ListItem>
+              <label htmlFor='query-type'>Query type</label>
+              <select name='query-type' id='query-type'>
+                <option value='get-spatial-range'>Get spatial range</option>
+                <option value='get-spatiotemporal-range'>
+                  Get spatio-temporal range
+                </option>
+                <option value='get-knn'>Get KNN</option>
+              </select>
+            </ListItem>
+            <ListItem>
+              <textarea id='params' name='params' rows='4'></textarea>
+            </ListItem>
+            <ListItem>
+              <button onClick={getQuery}>Submit</button>
+              {/* onClick={getQuery} */}
+            </ListItem>
+          </List>
+        </Drawer>
       </div>
     </div>
   );
