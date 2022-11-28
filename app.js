@@ -66,25 +66,6 @@ export default function App({
 }) {
   const [time, setTime] = useState(0);
   const [animation] = useState({});
-  const [apiData, setApiData] = useState({});
-
-  // make API call
-  const getQuery = () => {
-    axios
-      .get("http://localhost:9000", {
-        params: {
-          queryType: document.getElementById("query-type").value,
-          params: document.getElementById("params").value,
-          filepath:
-            "/home/awani/Desktop/SpatialProj/quickstart/data/simulated_trajectories.json",
-        },
-        crossdomain: true,
-      })
-      .then((res) => {
-        console.log(res.data);
-        setApiData(res.data);
-      });
-  };
 
   const temp = [
     {
@@ -142,6 +123,27 @@ export default function App({
     },
   ];
 
+  const [apiData, setApiData] = useState(temp);
+
+  // make API call
+  const getQuery = () => {
+    axios
+      .get("http://localhost:9000", {
+        params: {
+          queryType: document.getElementById("query-type").value,
+          params: document.getElementById("params").value,
+          filepath:
+            "/home/awani/Desktop/SpatialProj/quickstart/data/simulated_trajectories.json",
+        },
+        crossdomain: true,
+      })
+      .then((res) => {
+        // console.log("in getQuery");
+        setApiData(res.data);
+        // console.log(apiData);
+      });
+  };
+
   const animate = () => {
     setTime((t) => (t + animationSpeed) % loopLength);
     animation.id = window.requestAnimationFrame(animate);
@@ -155,9 +157,8 @@ export default function App({
   const layers = [
     new TripsLayer({
       id: "trips",
-      data: temp,
+      data: apiData,
       getPath: (d) => d.location,
-      // deduct start timestamp from each data point to avoid overflow
       getTimestamps: (d) => d.timestamps,
       getColor: (d) => (d.vehicle_id == 0 ? RED : BLUE),
       opacity: 0.5,
