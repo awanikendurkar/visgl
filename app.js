@@ -12,15 +12,10 @@ import { Drawer } from "@material-ui/core";
 import { List } from "@material-ui/core";
 import { ListItem } from "@material-ui/core";
 import Input from "@material-ui/core/Input";
-import Typography from "@material-ui/core";
+import Typography from "@material-ui/core/Typography";
 
-// Source data CSV
-const DATA_URL = {
-  BUILDINGS:
-    "https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/trips/buildings.json", // eslint-disable-line
-  TRIPS:
-    "https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/trips/trips-v7.json", // eslint-disable-line
-};
+const BLUE = [23, 184, 190];
+const RED = [253, 128, 93];
 
 const ambientLight = new AmbientLight({
   color: [255, 255, 255],
@@ -61,18 +56,7 @@ const INITIAL_VIEW_STATE = {
 const MAP_STYLE =
   "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
-// const landCover = [
-//   [
-//     [-111, 33],
-//     [-112, 33],
-//     [-111, 34],
-//     [-112, 34],
-//   ],
-// ];
-
 export default function App({
-  buildings = DATA_URL.BUILDINGS,
-  trips = DATA_URL.TRIPS,
   trailLength = 1800,
   initialViewState = INITIAL_VIEW_STATE,
   mapStyle = MAP_STYLE,
@@ -80,7 +64,7 @@ export default function App({
   loopLength = 10000, // unit corresponds to the timestamp in source data
   animationSpeed = 1,
 }) {
-  const [time, setTime] = useState(1664500000);
+  const [time, setTime] = useState(0);
   const [animation] = useState({});
   const [apiData, setApiData] = useState({});
 
@@ -96,7 +80,10 @@ export default function App({
         },
         crossdomain: true,
       })
-      .then((res) => console.log(res.data));
+      .then((res) => {
+        console.log(res.data);
+        setApiData(res.data);
+      });
   };
 
   const temp = [
@@ -171,13 +158,13 @@ export default function App({
       data: temp,
       getPath: (d) => d.location,
       // deduct start timestamp from each data point to avoid overflow
-      getTimestamps: (d) => d.timestamp,
-      getColor: [0, 255, 0, 255],
-      opacity: 0.8,
-      widthMinPixels: 50,
+      getTimestamps: (d) => d.timestamps,
+      getColor: (d) => (d.vehicle_id == 0 ? RED : BLUE),
+      opacity: 0.5,
+      widthMinPixels: 5,
       rounded: true,
-      fadeTrail: false,
-      trailLength: 200,
+      // fadeTrail: false,
+      trailLength: 180,
       currentTime: time,
     }),
   ];
@@ -215,8 +202,22 @@ export default function App({
               <textarea id='params' name='params' rows='4'></textarea>
             </ListItem>
             <ListItem>
+              <div style={{ width: "90%" }}>
+                <input
+                  style={{ width: "100%" }}
+                  type='range'
+                  min='0'
+                  max='2486'
+                  step='10'
+                  value={time}
+                  onChange={(e) => {
+                    setTime(Number(e.target.value));
+                  }}
+                />
+              </div>
+            </ListItem>
+            <ListItem>
               <button onClick={getQuery}>Submit</button>
-              {/* onClick={getQuery} */}
             </ListItem>
           </List>
         </Drawer>
